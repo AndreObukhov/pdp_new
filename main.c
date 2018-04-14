@@ -1,21 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <string.h>
+#include "all.h"
 
-typedef unsigned char byte;
-typedef unsigned short int word;
-typedef word adr;
 
-byte mem[64*1024];  //вся память
-word reg[8];    //регистры
-
-#define pc reg[7]   //7 регистр используем как прог. каунтер
-
-#define NO_PARAM 0
-#define HAS_SS 1
-#define HAS_DD (1<<1)
-#define HAS_XX (1<<2)
-#define HAS_NN (1<<3)
 
 byte nn;
 
@@ -26,9 +15,6 @@ word get_nn(word w) {
 word get_ss(word w) {
     return w & 077;
 }
-
-#define LO(x) ((x) & 0xFF)
-#define HI(x) (((x) >> 8) & 0xFF)
 
 byte b_read (adr a) {
     return mem[a];
@@ -100,7 +86,7 @@ void run (adr pc0) {
         for (i = 0; i< 64*1024 ;i ++) {
             struct Command cmd = commands[i];
             if ((w & cmd.mask) == cmd.opcode) { //проходим весь массив команд
-                printf("%s ", cmd.name);
+                printf("%s\n", cmd.name);
                 // аргументы
                 if(cmd.param & HAS_NN) {
                     nn = get_nn(w);     //разобраться с типом возвращаемого значения
@@ -117,16 +103,16 @@ void run (adr pc0) {
     }
 }
 
-void load_file() {    //доделать до полноценной работы с файлами
+void load_file(FILE* f) {    //доделать до полноценной работы с файлами
     unsigned int address;
     unsigned int n;
     unsigned int x;
     unsigned int i = 0;
 
-    char* filename = NULL;
-    scanf("%ms", &filename);    //%ms - размер считываемого слова неизвестен
-    FILE *f; //= stdin;
-    f = fopen(filename, "r");
+    //char* filename = NULL;
+    //scanf("%ms", &filename);    //%ms - размер считываемого слова неизвестен
+    //FILE *f; //= stdin;
+    //f = fopen(filename, "r");
 
     if (f == NULL) {
           perror("file");
@@ -138,7 +124,6 @@ void load_file() {    //доделать до полноценной работ�
             b_write((adr)(address + i), (byte)x);
         }
     }
-    fclose(f);
 }
 
 void mem_dump(adr start, word n) {
@@ -150,6 +135,18 @@ void mem_dump(adr start, word n) {
     {
         w = w_read((adr)(start + i));
         printf("%06o : %06o\n", start + i, w);
+    }
+}
+
+void f_mem_dump(adr start, word n, FILE* f) {
+    assert(n % 2 == 0);
+    int i = 0;
+    word w;
+
+    for (i = 0; i < n; i += 2)
+    {
+        w = w_read((adr)(start + i));
+        fprintf(f, "%06o : %06o\n", start + i, w);
     }
 }
 
@@ -173,11 +170,27 @@ void testmem(){
     assert(b0 == 0x0d);
 }
 
-int main() {
-    printf("---start testmem---\n");
-    testmem();
-    printf("---end testmem---\n");
-    load_file();
+int main(int argc, char **argv) {
+
+    if (strcmp(argv[1], "-t") == 0) //режим трассировки включен
+        t = 1;
+    if (strcmp(argv[1], "-q") == 0) //режим трассировки выключен
+        t = 0;
+
+//    //printf("---start testmem---\n");
+//    testmem();
+//    printf("---end testmem---\n");
+
+    FILE* f = fopen(argv[2], "r");
+    load_file(f);
+    fclose(f);
+
+    //mem_dump(1000)
+
+    f = fopen(argv[3], "w");
+    f_mem_dump(01000, 0100, f);
+    fclose(f);
+
     run(01000);
     return 0;
 }

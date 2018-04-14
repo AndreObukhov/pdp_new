@@ -80,6 +80,9 @@
 				</MakeCommands>
 			</Target>
 		</Build>
+		<Unit filename="C:/Users/User/CLionProjects/Emulator/all.h">
+			<Option target="Emulator"/>
+		</Unit>
 		<Unit filename="C:/Users/User/CLionProjects/Emulator/main.c">
 			<Option target="Emulator"/>
 		</Unit>

@@ -3,5 +3,5 @@ project(Emulator)
 
 set(CMAKE_C_STANDARD 99)
 
-set(SOURCE_FILES main.c)
+set(SOURCE_FILES main.c all.h)
 add_executable(Emulator ${SOURCE_FILES})
