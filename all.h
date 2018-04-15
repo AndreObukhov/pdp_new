@@ -24,5 +24,11 @@ int t; //переменная, отвечающая за трассировку
 #define LO(x) ((x) & 0xFF)
 #define HI(x) (((x) >> 8) & 0xFF)
 
+#define src_mode(w) (((w) & 007000) >> 9)
+#define dst_mode(w) (((w) & 000070) >> 3)
+
+#define src_reg(w) (((w) & 000700) >> 6)
+#define dst_reg(w) ((w) & 000007)
+
 
 #endif //EMULATOR_ALL_H

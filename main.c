@@ -4,16 +4,14 @@
 #include <string.h>
 #include "all.h"
 
-
-
 byte nn;
 
 word get_nn(word w) {
-    return w & 077;
+    return w & 077;     //??
 }
 
 word get_ss(word w) {
-    return w & 077;
+    return w & 077;     //???
 }
 
 byte b_read (adr a) {
@@ -39,33 +37,161 @@ word w_read (adr a) {
     return w;
 }
 
-void do_halt() {
+word take_src(word w) {
+    word mem_adr;
+    int i = src_reg(w);
+
+    switch  (src_mode(w)) {
+        case 0:
+            return reg[i];
+        case 1:
+            mem_adr = reg[i];
+            return w_read(mem_adr);
+        case 2:
+            mem_adr = reg[i];
+            reg[i] += 2;
+            return w_read(mem_adr);
+        case 3:
+            mem_adr = w_read(reg[i]);
+            reg[i] += 2;
+            return w_read(mem_adr);
+        case 4:
+            reg[i] -= 2;
+            mem_adr = reg[i];
+            return w_read(mem_adr);
+        case 5:
+            reg[i] -= 2;
+            mem_adr = w_read(reg[i]);
+            return w_read(mem_adr);
+        default:        //mode 6, 7 ???
+            return 0;
+    }
+/*    if (src_mode(w) == 0)
+    {
+        return reg[src_reg(w)];
+    }
+    if (src_mode(w) == 1)
+    {
+        mem_adr = reg[src_reg(w)];
+        return mem[mem_adr];
+    }
+    if (src_mode(w) == 2)
+    {
+        mem_adr = reg[src_reg(w)];
+        reg[src_reg(w)] +=2;
+        return mem[mem_adr];
+    }*/
+}
+
+word take_dst(word w) {
+    word mem_adr;
+    int i = dst_reg(w);
+
+    switch (dst_mode(w)) {
+        case 0:
+            return reg[i];
+        case 1:
+            mem_adr = reg[i];
+            return w_read(mem_adr);
+        case 2:
+            mem_adr = reg[i];
+            reg[i] += 2;
+            return w_read(mem_adr);
+        case 3:
+            mem_adr = w_read(reg[i]);
+            reg[i] += 2;
+            return w_read(mem_adr);
+        case 4:
+            reg[i] -= 2;
+            mem_adr = reg[i];
+            return w_read(mem_adr);
+        case 5:
+            reg[i] -= 2;
+            mem_adr = w_read(reg[i]);
+            return w_read(mem_adr);
+        default:        //mode 6, 7 ???
+            return 0;
+    }
+}
+
+void dst_push(word w, word result) {
+    word mem_adr;
+    int i = dst_reg(w);
+
+    switch (dst_mode(w)) {
+        case 0:
+            reg[i] = result;
+            break;
+        case 1:
+            mem_adr = reg[i];
+            w_write(mem_adr, result);
+            break;
+        case 2:
+            mem_adr = reg[i];
+            reg[i] += 2;
+            w_write(mem_adr, result);
+            break;
+        case 3:
+            mem_adr = w_read(reg[i]);
+            reg[i] += 2;
+            w_write(mem_adr, result);
+            break;
+        case 4:
+            reg[i] -= 2;
+            mem_adr = reg[i];
+            w_write(mem_adr, result);
+            break;
+        case 5:
+            reg[i] -= 2;
+            mem_adr = w_read(reg[i]);
+            w_write(mem_adr, result);
+            break;
+        default:        //mode 6, 7 ???
+            printf("ha, loh!");
+    }
+}
+
+void do_halt(word w) {
+    for(int i = 0; i < 8; i ++)     //just for test reasons
+    {
+        printf("%06o\n", reg[i]);
+    }
     printf("THE END\n");
     exit(0);
 }
 
-void do_add() {
+void do_add(word w) {
+    //reg[0] = 1;
+    word source = take_src(w);
+
+    word dest = take_dst(w);
+            //printf("%o %o\n",source, dest);
+    dest = dest + source;
+
+    dst_push(w, dest);
+    //printf("%o %o\n", reg[0], reg[1]);
     printf("ADD\n");
 }
 
-void do_mov() {
+void do_mov(word w) {
+    word source = take_src(w);
+    dst_push(w, source);
     printf("MOV\n");
 }
 
-void do_sob(){
+void do_sob(word w){
     w_read(nn);
 }
 
-void do_unknown() {
+void do_unknown(word w) {
     printf("UNKNOWN\n");
 }
-
 
 struct Command {
     word opcode;
     word mask;
     char * name;
-    void (*func)();
+    void (*func)(word w);
     byte param;
 } commands[] = {
         {0,       0177777, "halt",      do_halt,     NO_PARAM},   //0xFFFF
@@ -83,7 +209,7 @@ void run (adr pc0) {
         word w = w_read(pc);
         printf("%06o:%06o\n", pc, w);
         pc += 2;
-        for (i = 0; i< 64*1024 ;i ++) {
+        for (i = 0; i < 64*1024; i ++) {
             struct Command cmd = commands[i];
             if ((w & cmd.mask) == cmd.opcode) { //проходим весь массив команд
                 printf("%s\n", cmd.name);
@@ -95,9 +221,10 @@ void run (adr pc0) {
                     nn = get_ss(w);     //написать функцию
                 }
 
-                cmd.func();
+                cmd.func(w);
                 break;  //выходим из сравнения с массивом; если нет совпадений - есть последняя команда unknown
             }
+
         }
 
     }
@@ -143,10 +270,13 @@ void f_mem_dump(adr start, word n, FILE* f) {
     int i = 0;
     word w;
 
-    for (i = 0; i < n; i += 2)
+    for (i = 0; ; i += 2)
     {
         w = w_read((adr)(start + i));
         fprintf(f, "%06o : %06o\n", start + i, w);
+        //fprintf(f, "%o %o\n", src_mode(w), src_reg(w));
+        if (w == 000000)
+            break;
     }
 }
 
