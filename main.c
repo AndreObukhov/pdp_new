@@ -212,7 +212,7 @@ void run (adr pc0) {
         for (i = 0; i < 64*1024; i ++) {
             struct Command cmd = commands[i];
             if ((w & cmd.mask) == cmd.opcode) { //проходим весь массив команд
-                printf("%s\n", cmd.name);
+                //printf("%s\n", cmd.name);
                 // аргументы
                 if(cmd.param & HAS_NN) {
                     nn = get_nn(w);     //разобраться с типом возвращаемого значения
