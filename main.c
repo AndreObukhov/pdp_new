@@ -37,50 +37,54 @@ word w_read (adr a) {
     return w;
 }
 
+void reg_check() {
+    printf("Reg check:\n");
+    printf("R0=%06o,   R2=%06o,   R4=%06o,   R6=%06o\n", reg[0], reg[2], reg[4], reg[6]);
+    printf("R1=%06o,   R3=%06o,   R5=%06o,   PC=%06o\n", reg[1], reg[3], reg[5], pc);
+}
+
 word take_src(word w) {
     word mem_adr;
     int i = src_reg(w);
 
     switch  (src_mode(w)) {
         case 0:
+            if (t)
+                printf("R%o, ", i);
             return reg[i];
         case 1:
+            if (t)
+                printf( "@R%o, ", i);
             mem_adr = reg[i];
             return w_read(mem_adr);
         case 2:
+            if (t)
+                printf("(R%o)+, ", i);
             mem_adr = reg[i];
             reg[i] += 2;
             return w_read(mem_adr);
         case 3:
+            if (t)
+                printf("@(R%o)+, ", i);
             mem_adr = w_read(reg[i]);
             reg[i] += 2;
             return w_read(mem_adr);
         case 4:
+            if (t)
+                printf("-(R%o), ", i);
             reg[i] -= 2;
             mem_adr = reg[i];
             return w_read(mem_adr);
         case 5:
+            if (t)
+                printf("-@(R%o), ", i);
             reg[i] -= 2;
             mem_adr = w_read(reg[i]);
             return w_read(mem_adr);
         default:        //mode 6, 7 ???
-            return 0;
+            printf("Ha, loh (take_src) \n");
+            break;
     }
-/*    if (src_mode(w) == 0)
-    {
-        return reg[src_reg(w)];
-    }
-    if (src_mode(w) == 1)
-    {
-        mem_adr = reg[src_reg(w)];
-        return mem[mem_adr];
-    }
-    if (src_mode(w) == 2)
-    {
-        mem_adr = reg[src_reg(w)];
-        reg[src_reg(w)] +=2;
-        return mem[mem_adr];
-    }*/
 }
 
 word take_dst(word w) {
@@ -120,28 +124,40 @@ void dst_push(word w, word result) {
 
     switch (dst_mode(w)) {
         case 0:
+            if (t)
+                printf("R%o\n", i);
             reg[i] = result;
             break;
         case 1:
+            if (t)
+                printf("@R%o\n", i);
             mem_adr = reg[i];
             w_write(mem_adr, result);
             break;
         case 2:
+            if (t)
+                printf("(R%o)+\n", i);
             mem_adr = reg[i];
             reg[i] += 2;
             w_write(mem_adr, result);
             break;
         case 3:
+            if (t)
+                printf("@(R%o)+\n", i);
             mem_adr = w_read(reg[i]);
             reg[i] += 2;
             w_write(mem_adr, result);
             break;
         case 4:
+            if (t)
+                printf("-(R%o)\n", i);
             reg[i] -= 2;
             mem_adr = reg[i];
             w_write(mem_adr, result);
             break;
         case 5:
+            if (t)
+                printf("@-(R%o)\n", i);
             reg[i] -= 2;
             mem_adr = w_read(reg[i]);
             w_write(mem_adr, result);
@@ -152,51 +168,50 @@ void dst_push(word w, word result) {
 }
 
 void do_halt(word w) {
-    printf("---TEST BEGIN---\n");
-    for(int i = 0; i < 8; i ++)     //just for test reasons
-    {
-        printf("%06o\n", reg[i]);
+    printf("\n---TEST BEGIN---\n");
+    if (t) {
+        reg_check();
+        printf("---TEST END---\n");
+        printf("THE END (halt)\n");
     }
-    printf("---TEST END---\n");
-    printf("THE END\n");
     exit(0);
 }
 
 void do_add(word w) {
     //reg[0] = 1;
-    word source = take_src(w);
+    printf("ADD ");
 
+    word source = take_src(w);
     word dest = take_dst(w);
             //printf("%o %o\n",source, dest);
     dest = dest + source;
-
     dst_push(w, dest);
     //printf("%o %o\n", reg[0], reg[1]);
-    printf("ADD\n");
 }
 
 void do_mov(word w) {
+    printf("MOV ");
+
     word source = take_src(w);
     dst_push(w, source);
-    printf("MOV\n");
 }
 
 void do_sob(word w) {
+    printf("SOB \n");
+
     adr reg_adr = src_reg(w);
     word nn = get_nn(w);
 
     reg[reg_adr] --;
-
     if (reg[reg_adr] > 0)
         pc = pc - 2*nn;
-
-    printf("SOB\n");
 }
 
 void do_clear(word w) {
+    printf("CLR ");
+
     take_dst(w);
     dst_push(w, 0);
-    printf("CLR\n");
 }
 
 void do_unknown(word w) {
@@ -224,7 +239,7 @@ void run (adr pc0) {
     int i;
     while (1) {
         word w = w_read(pc);
-        printf("%06o:%06o\n", pc, w);
+        printf("%06o:%06o   ", pc, w);
         pc += 2;
         for (i = 0; i < 64*1024; i ++) {
             struct Command cmd = commands[i];
@@ -237,13 +252,11 @@ void run (adr pc0) {
                 if(cmd.param & HAS_SS) {
                     nn = get_ss(w);     //написать функцию
                 }
-
                 cmd.func(w);
+                printf("\n");   //просто для удобства делает пустую строчку между комндами
                 break;  //выходим из сравнения с массивом; если нет совпадений - есть последняя команда unknown
             }
-
         }
-
     }
 }
 
