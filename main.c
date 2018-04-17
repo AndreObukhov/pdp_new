@@ -152,10 +152,12 @@ void dst_push(word w, word result) {
 }
 
 void do_halt(word w) {
+    printf("---TEST BEGIN---\n");
     for(int i = 0; i < 8; i ++)     //just for test reasons
     {
         printf("%06o\n", reg[i]);
     }
+    printf("---TEST END---\n");
     printf("THE END\n");
     exit(0);
 }
@@ -179,8 +181,22 @@ void do_mov(word w) {
     printf("MOV\n");
 }
 
-void do_sob(word w){
-    w_read(nn);
+void do_sob(word w) {
+    adr reg_adr = src_reg(w);
+    word nn = get_nn(w);
+
+    reg[reg_adr] --;
+
+    if (reg[reg_adr] > 0)
+        pc = pc - 2*nn;
+
+    printf("SOB\n");
+}
+
+void do_clear(word w) {
+    take_dst(w);
+    dst_push(w, 0);
+    printf("CLR\n");
 }
 
 void do_unknown(word w) {
@@ -198,6 +214,7 @@ struct Command {
         {0010000, 0170000, "mov",       do_mov,      HAS_SS | HAS_DD},
         {0060000, 0170000, "add",       do_add,      HAS_SS | HAS_DD},
         {0077000, 0177000, "sob",       do_sob,      HAS_NN},  //SOB
+        {0005000, 0177700, "clr",       do_clear,    HAS_DD},
         {0,       0,       "unknown",   do_unknown,  HAS_NN}   //MUST BE THE LAST; последняя команда: функция пробегает весь массив
         // если нет совпадений - выполняется она
 };
