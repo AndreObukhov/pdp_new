@@ -13,6 +13,11 @@ byte mem[64*1024];  //вся память
 word reg[8];    //регистры
 int t; //переменная, отвечающая за трассировку
 
+struct Data {
+    word w;
+    adr mem_adr;
+};
+
 #define pc reg[7]   //7 регистр используем как прог. каунтер
 
 #define NO_PARAM 0
@@ -23,6 +28,10 @@ int t; //переменная, отвечающая за трассировку
 
 #define LO(x) ((x) & 0xFF)
 #define HI(x) (((x) >> 8) & 0xFF)
+#define src 1
+#define dst 2
+
+#define B(w) (((w) & 0100000) >> 15)
 
 #define src_mode(w) (((w) & 007000) >> 9)
 #define dst_mode(w) (((w) & 000070) >> 3)
