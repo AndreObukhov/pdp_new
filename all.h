@@ -42,7 +42,6 @@ struct status {
 
 struct status PSW;
 
-
 #define pc reg[7]   //7 регистр используем как прог. каунтер
 
 #define NO_PARAM 0

@@ -14,6 +14,10 @@ word get_ss(word w) {
     return w & 077;     //???
 }
 
+byte get_offset(word w) {
+    return w & 0377;
+}
+
 byte b_read (adr a) {
     return mem[a];
 }
@@ -56,6 +60,29 @@ void reg_check() {
 void smart_reg_check(int a, int b) {
     printf("   R%d=%06o ", a, reg[a]);
     printf("R%d=%06o\n", b, reg[b]);
+}
+
+void flag_check() {
+    printf("---FLAG TEST BEGIN---\n");
+    printf("N=%06o,    Z=%06o     V=%06o    C=%06o\n", PSW.N, PSW.Z, PSW.V, PSW.C );
+    printf("---FLAG TEST END---\n");
+}
+
+void set_flags (int res) {
+    if (res == 0)
+        PSW.Z = 1;
+    else
+        PSW.Z = 0;
+
+    if (res < 0)
+        PSW.N = 1;
+    else
+        PSW.N = 0;
+
+    if (((res>>16) & 1) == 1)
+        PSW.C = 1;  //carry появляется с минусом
+    else
+        PSW.C = 0;
 }
 
 struct Data take(word w, int a) {
@@ -164,22 +191,27 @@ void do_add(word w) {
     if (t)
         printf("ADD   ");
 
+    int res;
+
     struct Data source = take(w, src);
     struct Data dest = take(w, dst);
             //printf("%o %o\n",source, dest);
 
-    dest.w = dest.w + source.w;
+    ww.u_w = dest.w;
+    res = ww.s_w;
+
+    ww.u_w = source.w;
+    res = res + ww.s_w;
+
+    dest.w = (word) res;
     w_write(dest.mem_adr, dest.w);
 
-    /*bb.u_b = (byte) source.w;
-    printf("%o\n", bb.s_b);
-    dest.w = dest.w + bb.s_b;
-    //dest.w = (byte) dest.w + (byte) source.w;
-    b_write(dest.mem_adr, (byte) dest.w);*/
+    set_flags(res);
+    if (t)
+        flag_check;
 
     if (t)
         smart_reg_check(src_reg(w), dst_reg(w));
-    //printf("\n");
 }
 
 void do_mov(word w) {
@@ -194,13 +226,18 @@ void do_mov(word w) {
     //dst_push(w, source.w);
     if (t)
         printf("   [%06o]:%06o\n", source.mem_adr, source.w);
-
    // dest.w = source.w;
-    if (B(w) == 0)
+
+    if (B(w) == 0) {
+        ww.u_w = source.w;
         w_write(dest.mem_adr, source.w);
+    }
     if (B(w)) {
-        if (dest.mem_adr > 7)
+        if (dest.mem_adr > 7) {
+            ww.u_w = source.w;
             b_write(dest.mem_adr, (byte) source.w);
+        }
+
         else {
             bb.u_b = (byte) source.w;
             ww.s_w = bb.s_b;
@@ -209,6 +246,8 @@ void do_mov(word w) {
         }
         //source.w = negative_byte((byte)source.w);
     }
+    set_flags(ww.s_w);
+    flag_check();
 }
 
 void do_sob(word w) {
@@ -235,7 +274,22 @@ void do_clear(word w) {
         w_write(dest.mem_adr, 0);
     if (B(w))
         b_write(dest.mem_adr, 0);
+
+    set_flags(0);
+    if (t)
+        flag_check();
+
     printf("\n");
+}
+
+void do_beq(word w) {
+    if (t)
+        printf("BEQ\n");
+
+    if (PSW.Z) {
+        bb.u_b = get_offset(w);
+        pc += 2 * bb.s_b;
+    }
 }
 
 void do_unknown(word w) {
@@ -255,6 +309,7 @@ struct Command {
         {0060000, 0170000, "add",       do_add,      HAS_SS | HAS_DD},
         {0077000, 0177000, "sob",       do_sob,      HAS_NN},  //SOB
         {0005000, 0177700, "clr",       do_clear,    HAS_DD},
+        {0001400, 0177400, "beq",       do_beq,      HAS_XX},
         {0,       0,       "unknown",   do_unknown,  HAS_NN}   //MUST BE THE LAST; последняя команда: функция пробегает весь массив
         // если нет совпадений - выполняется она
 };
@@ -279,6 +334,7 @@ void run (adr pc0) {
                 if(cmd.param & HAS_SS) {
                     nn = get_ss(w);     //написать функцию
                 }
+                printf("COMMAND: ");    //необязательно
                 cmd.func(w);
                 //reg_check();
                 //printf("\n");   //просто для удобства делает пустую строчку между комндами
