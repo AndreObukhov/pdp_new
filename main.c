@@ -49,6 +49,7 @@ void reg_check() {
     printf("Reg check:\n");
     printf("R0=%06o,   R2=%06o,   R4=%06o,   R6=%06o\n", reg[0], reg[2], reg[4], reg[6]);
     printf("R1=%06o,   R3=%06o,   R5=%06o,   PC=%06o\n", reg[1], reg[3], reg[5], pc);
+    printf("N=%06o,    Z=%06o     V=%06o    C=%06o\n", PSW.N, PSW.Z, PSW.V, PSW.C );
     printf("---TEST END---\n");
 }
 
@@ -59,10 +60,10 @@ void smart_reg_check(int a, int b) {
 
 struct Data take(word w, int a) {
     struct Data res;
-    assert(a == 1 || a == 2);
+    assert(a == src || a == dst);
     int i;
     int mode;
-    if (a == 1) {
+    if (a == src) {
         i = src_reg(w);
         mode = src_mode(w);
     }
@@ -166,9 +167,15 @@ void do_add(word w) {
     struct Data source = take(w, src);
     struct Data dest = take(w, dst);
             //printf("%o %o\n",source, dest);
-    dest.w = dest.w + source.w;
 
+    dest.w = dest.w + source.w;
     w_write(dest.mem_adr, dest.w);
+
+    /*bb.u_b = (byte) source.w;
+    printf("%o\n", bb.s_b);
+    dest.w = dest.w + bb.s_b;
+    //dest.w = (byte) dest.w + (byte) source.w;
+    b_write(dest.mem_adr, (byte) dest.w);*/
 
     if (t)
         smart_reg_check(src_reg(w), dst_reg(w));
@@ -191,20 +198,29 @@ void do_mov(word w) {
    // dest.w = source.w;
     if (B(w) == 0)
         w_write(dest.mem_adr, source.w);
-    if (B(w))
-        b_write(dest.mem_adr, (byte)source.w);
+    if (B(w)) {
+        if (dest.mem_adr > 7)
+            b_write(dest.mem_adr, (byte) source.w);
+        else {
+            bb.u_b = (byte) source.w;
+            ww.s_w = bb.s_b;
+            source.w = ww.u_w;
+            w_write(dest.mem_adr, source.w);
+        }
+        //source.w = negative_byte((byte)source.w);
+    }
 }
 
 void do_sob(word w) {
     if (t)
         printf("SOB   ");
 
-    adr reg_adr = src_reg(w);
+    adr reg_adr = (adr)src_reg(w);
     word nn = get_nn(w);
 
     reg[reg_adr] --;
     if (reg[reg_adr] > 0) {
-        pc = pc - 2 * nn;
+        pc = pc - 2*nn;
     }
     if (t)
         printf("R%o, %06o\n", reg_adr, pc);
@@ -223,7 +239,7 @@ void do_clear(word w) {
 }
 
 void do_unknown(word w) {
-    printf("UNKNOWN\n");
+    printf("ha, loh! UNKNOWN function\n");
 }
 
 struct Command {

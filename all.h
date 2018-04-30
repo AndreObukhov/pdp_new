@@ -8,15 +8,40 @@
 typedef unsigned char byte;
 typedef unsigned short int word;
 typedef word adr;
+typedef unsigned int double_word;   //для проверки carry по 17 биту
+
+typedef union s_byte {
+    char s_b;
+    byte u_b;
+} s_byte;
+
+typedef union s_word {
+    short int s_w;
+    word u_w;
+} s_word;
 
 byte mem[64*1024];  //вся память
 word reg[8];    //регистры
+
 int t; //переменная, отвечающая за трассировку
+
+s_byte bb;
+s_word ww;
 
 struct Data {
     word w;
     adr mem_adr;
 };
+
+struct status {
+    byte N;
+    byte Z;
+    byte V;
+    byte C;
+};
+
+struct status PSW;
+
 
 #define pc reg[7]   //7 регистр используем как прог. каунтер
 
