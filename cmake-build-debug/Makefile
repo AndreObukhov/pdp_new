@@ -122,6 +122,33 @@ Emulator/fast:
 	$(MAKE) -f CMakeFiles\Emulator.dir\build.make CMakeFiles/Emulator.dir/build
 .PHONY : Emulator/fast
 
+functions.obj: functions.c.obj
+
+.PHONY : functions.obj
+
+# target to build an object file
+functions.c.obj:
+	$(MAKE) -f CMakeFiles\Emulator.dir\build.make CMakeFiles/Emulator.dir/functions.c.obj
+.PHONY : functions.c.obj
+
+functions.i: functions.c.i
+
+.PHONY : functions.i
+
+# target to preprocess a source file
+functions.c.i:
+	$(MAKE) -f CMakeFiles\Emulator.dir\build.make CMakeFiles/Emulator.dir/functions.c.i
+.PHONY : functions.c.i
+
+functions.s: functions.c.s
+
+.PHONY : functions.s
+
+# target to generate assembly for a file
+functions.c.s:
+	$(MAKE) -f CMakeFiles\Emulator.dir\build.make CMakeFiles/Emulator.dir/functions.c.s
+.PHONY : functions.c.s
+
 main.obj: main.c.obj
 
 .PHONY : main.obj
@@ -149,6 +176,33 @@ main.c.s:
 	$(MAKE) -f CMakeFiles\Emulator.dir\build.make CMakeFiles/Emulator.dir/main.c.s
 .PHONY : main.c.s
 
+take.obj: take.c.obj
+
+.PHONY : take.obj
+
+# target to build an object file
+take.c.obj:
+	$(MAKE) -f CMakeFiles\Emulator.dir\build.make CMakeFiles/Emulator.dir/take.c.obj
+.PHONY : take.c.obj
+
+take.i: take.c.i
+
+.PHONY : take.i
+
+# target to preprocess a source file
+take.c.i:
+	$(MAKE) -f CMakeFiles\Emulator.dir\build.make CMakeFiles/Emulator.dir/take.c.i
+.PHONY : take.c.i
+
+take.s: take.c.s
+
+.PHONY : take.s
+
+# target to generate assembly for a file
+take.c.s:
+	$(MAKE) -f CMakeFiles\Emulator.dir\build.make CMakeFiles/Emulator.dir/take.c.s
+.PHONY : take.c.s
+
 # Help Target
 help:
 	@echo The following are some of the valid targets for this Makefile:
@@ -158,9 +212,15 @@ help:
 	@echo ... Emulator
 	@echo ... edit_cache
 	@echo ... rebuild_cache
+	@echo ... functions.obj
+	@echo ... functions.i
+	@echo ... functions.s
 	@echo ... main.obj
 	@echo ... main.i
 	@echo ... main.s
+	@echo ... take.obj
+	@echo ... take.i
+	@echo ... take.s
 .PHONY : help
 
 

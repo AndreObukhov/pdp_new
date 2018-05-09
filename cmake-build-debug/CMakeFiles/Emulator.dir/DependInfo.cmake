@@ -4,7 +4,9 @@ set(CMAKE_DEPENDS_LANGUAGES
   )
 # The set of files for implicit dependencies of each language:
 set(CMAKE_DEPENDS_CHECK_C
+  "C:/Users/User/CLionProjects/Emulator/functions.c" "C:/Users/User/CLionProjects/Emulator/cmake-build-debug/CMakeFiles/Emulator.dir/functions.c.obj"
   "C:/Users/User/CLionProjects/Emulator/main.c" "C:/Users/User/CLionProjects/Emulator/cmake-build-debug/CMakeFiles/Emulator.dir/main.c.obj"
+  "C:/Users/User/CLionProjects/Emulator/take.c" "C:/Users/User/CLionProjects/Emulator/cmake-build-debug/CMakeFiles/Emulator.dir/take.c.obj"
   )
 set(CMAKE_C_COMPILER_ID "GNU")
 

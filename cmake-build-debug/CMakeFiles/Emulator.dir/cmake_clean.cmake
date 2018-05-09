@@ -1,5 +1,7 @@
 file(REMOVE_RECURSE
   "CMakeFiles/Emulator.dir/main.c.obj"
+  "CMakeFiles/Emulator.dir/functions.c.obj"
+  "CMakeFiles/Emulator.dir/take.c.obj"
   "Emulator.pdb"
   "Emulator.exe"
   "Emulator.exe.manifest"

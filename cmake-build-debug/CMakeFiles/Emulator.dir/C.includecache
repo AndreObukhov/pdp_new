@@ -7,8 +7,6 @@
 #IncludeRegexTransform: 
 
 C:/Users/User/CLionProjects/Emulator/all.h
-
-C:/Users/User/CLionProjects/Emulator/main.c
 stdio.h
 -
 stdlib.h
@@ -17,6 +15,16 @@ assert.h
 -
 string.h
 -
+
+C:/Users/User/CLionProjects/Emulator/functions.c
+all.h
+C:/Users/User/CLionProjects/Emulator/all.h
+
+C:/Users/User/CLionProjects/Emulator/main.c
+all.h
+C:/Users/User/CLionProjects/Emulator/all.h
+
+C:/Users/User/CLionProjects/Emulator/take.c
 all.h
 C:/Users/User/CLionProjects/Emulator/all.h
 

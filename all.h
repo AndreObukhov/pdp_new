@@ -4,11 +4,19 @@
 
 #ifndef EMULATOR_ALL_H
 #define EMULATOR_ALL_H
+#include <stdio.h>
+#include <stdlib.h>
+#include <assert.h>
+#include <string.h>
+//#include "functions.c"
+//#include "take.c"
 
 typedef unsigned char byte;
 typedef unsigned short int word;
 typedef word adr;
 typedef unsigned int double_word;   //для проверки carry по 17 биту
+
+byte nn;
 
 typedef union s_byte {
     char s_b;
@@ -44,6 +52,8 @@ struct status PSW;
 
 #define pc reg[7]   //7 регистр используем как прог. каунтер
 
+#define out 0177564
+
 #define NO_PARAM 0
 #define HAS_SS 1
 #define HAS_DD (1<<1)
@@ -62,6 +72,34 @@ struct status PSW;
 
 #define src_reg(w) (((w) & 000700) >> 6)
 #define dst_reg(w) ((w) & 000007)
+
+word get_nn(word w);
+word get_ss(word w);
+byte get_offset(word w);
+byte b_read (adr a);
+void b_write (adr a, byte val);
+void w_write (adr a, word val);
+word w_read (adr a);
+void reg_check();
+void smart_reg_check(int a, int b);
+void flag_check();
+void set_flags (int res);
+void do_halt(word w);
+void do_add(word w);
+void do_mov(word w);
+void do_sob(word w);
+void do_clear(word w);
+void do_br(word w);
+void do_beq(word w);
+void do_tstb(word w);
+void do_bpl(word w);
+void do_unknown(word w);
+void run (adr pc0);
+void load_file(FILE* f);
+void mem_dump(adr start, word n);
+void f_mem_dump(adr start, word n, FILE* f);
+void testmem();
+struct Data take(word w, int a);
 
 
 #endif //EMULATOR_ALL_H

@@ -83,7 +83,13 @@
 		<Unit filename="C:/Users/User/CLionProjects/Emulator/all.h">
 			<Option target="Emulator"/>
 		</Unit>
+		<Unit filename="C:/Users/User/CLionProjects/Emulator/functions.c">
+			<Option target="Emulator"/>
+		</Unit>
 		<Unit filename="C:/Users/User/CLionProjects/Emulator/main.c">
+			<Option target="Emulator"/>
+		</Unit>
+		<Unit filename="C:/Users/User/CLionProjects/Emulator/take.c">
 			<Option target="Emulator"/>
 		</Unit>
 		<Unit filename="C:/Users/User/CLionProjects/Emulator/CMakeLists.txt">
