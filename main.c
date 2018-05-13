@@ -1,5 +1,16 @@
 #include "all.h"
 
+byte mem[64*1024];  //вся память
+word reg[8];    //регистры
+
+int t; //переменная, отвечающая за трассировку
+
+s_byte bb;
+s_word ww;
+
+struct status PSW;
+
+byte nn;
 
 int main(int argc, char **argv) {
 
@@ -24,7 +35,7 @@ int main(int argc, char **argv) {
     //word test = w_read(0177564);
     //printf("%06o", test);
 
-    printf("--------------------RUNNING--------------------\n");
+    printf("---------------------RUNNING----------------------\n");
 
     run(01000);
     return 0;

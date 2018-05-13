@@ -4,16 +4,26 @@
 
 #include "all.h"
 
+extern byte mem[64*1024];
+extern word reg[8];
+extern int t;
+
+extern s_byte bb;
+extern s_word ww;
+extern byte nn;
+
+extern struct status PSW;
+
 word get_nn(word w) {
-    return w & 077;     //??
+    return (word) (w & 077);     //??
 }
 
 word get_ss(word w) {
-    return w & 077;     //???
+    return (word) (w & 077);     //???
 }
 
 byte get_offset(word w) {
-    return w & 0377;
+    return (byte) (w & 0377);
 }
 
 byte b_read (adr a) {
@@ -61,12 +71,12 @@ word w_read (adr a) {
 }
 
 void reg_check() {
-    printf("\n---TEST BEGIN---\n");
+    printf("\n------TEST BEGIN------\n");
     printf("Reg check:\n");
-    printf("R0=%06o,   R2=%06o,   R4=%06o,   R6=%06o\n", reg[0], reg[2], reg[4], reg[6]);
+    printf("R0=%06o,   R2=%06o,   R4=%06o,   SP=%06o\n", reg[0], reg[2], reg[4], reg[6]);
     printf("R1=%06o,   R3=%06o,   R5=%06o,   PC=%06o\n", reg[1], reg[3], reg[5], pc);
-    printf("N=%06o,    Z=%06o     V=%06o    C=%06o\n", PSW.N, PSW.Z, PSW.V, PSW.C );
-    printf("---TEST END---\n");
+    printf("N=%06o,    Z=%06o     V=%06o     C=%06o\n", PSW.N, PSW.Z, PSW.V, PSW.C );
+    printf("-------TEST END-------\n");
 }
 
 void smart_reg_check(int a, int b) {
@@ -80,7 +90,7 @@ void flag_check() {
     printf("---FLAG TEST END---\n");
 }
 
-void set_flags (int res) {
+/*void set_flags (int res) {
     if (res == 0)
         PSW.Z = 1;
     else
@@ -95,7 +105,7 @@ void set_flags (int res) {
         PSW.C = 1;  //carry появляется с минусом
     else
         PSW.C = 0;
-}
+}*/
 
 void do_halt(word w) {
     if (t)
@@ -124,7 +134,15 @@ void do_add(word w) {
     dest.w = (word) res;
     w_write(dest.mem_adr, dest.w);
 
-    set_flags(res);
+    if (res == 0)
+        PSW.Z = 1;
+    else
+        PSW.Z = 0;
+
+    if (res < 0)
+        PSW.N = 1;      //как сделать carry???
+    else
+        PSW.N = 0;
     //flag_check;
     if (t)
         smart_reg_check(src_reg(w), dst_reg(w));
@@ -139,7 +157,7 @@ void do_mov(word w) {
     }
     struct Data source = take(w, src);
     struct Data dest = take(w, dst);
-    //dst_push(w, source.w);
+
     if (t)
         printf("   [%06o]:%06o\n", source.mem_adr, source.w);
     // dest.w = source.w;
@@ -160,9 +178,19 @@ void do_mov(word w) {
             source.w = ww.u_w;
             w_write(dest.mem_adr, source.w);
         }
-        //source.w = negative_byte((byte)source.w);
     }
-    set_flags(ww.s_w);
+
+    if (ww.s_w == 0)
+        PSW.Z = 1;
+    else
+        PSW.Z = 0;
+
+    if (ww.s_w < 0)
+        PSW.N = 1;
+    else
+        PSW.N = 0;
+
+    PSW.V = 0;
     //flag_check();
 }
 
@@ -174,6 +202,7 @@ void do_sob(word w) {
     word nn = get_nn(w);
 
     reg[reg_adr] --;
+
     if (reg[reg_adr] > 0) {
         pc = pc - 2*nn;
     }
@@ -191,10 +220,13 @@ void do_clear(word w) {
     if (B(w))
         b_write(dest.mem_adr, 0);
 
-    set_flags(0);
+    PSW.N = 0;
+    PSW.Z = 1;
+    PSW.V = 0;
+    PSW.C = 0;
     //flag_check();
-
-    printf("\n");
+    if (t)
+        printf("\n");
 }
 
 void do_br(word w) {
@@ -231,11 +263,16 @@ void do_tstb(word w) {
 
         bb.u_b = (byte)dest.w;
 
-        set_flags(bb.s_b);
-        /*if (bb.s_b == 0)
+        if (bb.s_b == 0)
             PSW.Z = 1;
+        else
+            PSW.Z = 0;
         if (bb.s_b < 0)
-            PSW.N = 1;*/
+            PSW.N = 1;
+        else
+            PSW.N = 0;
+        PSW.C = 0;
+        PSW.V = 0;
     }
     else {
         if (t)
@@ -245,11 +282,16 @@ void do_tstb(word w) {
 
         ww.u_w = dest.w;
 
-        /*if (ww.s_w == 0)
+        if (ww.s_w == 0)
             PSW.Z = 1;
+        else
+            PSW.Z = 0;
         if (ww.s_w < 0)
-            PSW.N = 1;*/
-        set_flags(ww.s_w);
+            PSW.N = 1;
+        else
+            PSW.N = 0;
+        PSW.C = 0;
+        PSW.V = 0;
     }
     if (t)
         printf("\n");
@@ -275,6 +317,35 @@ void do_bpl(word w) {
     }*/
 }
 
+void do_jsr(word w) {
+    if (t)
+        printf("JSR ");
+
+    struct Data dest = take(w, dst);
+
+    w_write(reg[6], reg[src_reg(w)]);
+    reg[6]-= 2;
+    reg[src_reg(w)] = pc;
+    pc = dest.mem_adr;
+    if (t)
+        printf("\n");
+}
+
+void do_rts(word w) {
+    if (t) {
+        printf("RTS\n");
+    }
+
+    pc = reg[dst_reg(w)];
+    //printf("R6 = %06o\n", w_read(reg[6]));
+    reg[6] += 2;
+    //printf("R6 = %06o\n", w_read(reg[6]));
+    //printf("%06o\n", pc);
+    reg[dst_reg(w)] = w_read(reg[6]);
+    reg[dst_reg(w)] += 2;   //костылб
+    //printf("%06o\n", pc);
+}
+
 void do_unknown(word w) {
     printf("ha, loh! UNKNOWN function\n");
 }
@@ -295,7 +366,9 @@ struct Command {
         {0000400, 0177400, "br",        do_br,       HAS_XX},
         {0001400, 0177400, "beq",       do_beq,      HAS_XX},
         {0105700, 0177700, "tstb",      do_tstb,     HAS_XX},
-        {0100000, 0177400,  "bpl",      do_bpl,      HAS_XX},
+        {0100000, 0177400, "bpl",       do_bpl,      HAS_XX},
+        {0004000, 0177000, "jsr",       do_jsr,      HAS_DD},
+        {0000200, 0177770, "rts",       do_rts,      NO_PARAM},
         {0,       0,       "unknown",   do_unknown,  HAS_NN}   //MUST BE THE LAST; последняя команда: функция пробегает весь массив
         // если нет совпадений - выполняется она
 };
@@ -314,12 +387,12 @@ void run (adr pc0) {
             if ((w & cmd.mask) == cmd.opcode) { //проходим весь массив команд
                 //printf("%s\n", cmd.name);
                 // аргументы
-                if(cmd.param & HAS_NN) {
+                /*if(cmd.param & HAS_NN) {
                     nn = get_nn(w);     //разобраться с типом возвращаемого значения
                 }
                 if(cmd.param & HAS_SS) {
                     nn = get_ss(w);     //написать функцию
-                }
+                }*/
                 if (t)
                     printf("COMMAND: ");    //необязательно
                 cmd.func(w);
@@ -338,7 +411,7 @@ void load_file(FILE* f) {    //доделать до полноценной ра
     unsigned int i = 0;
 
     //char* filename = NULL;
-    //scanf("%ms", &filename);    //%ms - размер считываемого слова неизвестен
+    //scanf("%ms", &filename);    %ms - размер считываемого слова неизвестен
     //FILE *f; //= stdin;
     //f = fopen(filename, "r");
 

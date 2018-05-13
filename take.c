@@ -1,8 +1,17 @@
 //
 // Created by User on 07.05.2018.
 //
-
 #include "all.h"
+
+extern byte mem[64*1024];
+extern word reg[8];
+extern int t;
+
+extern s_byte bb;
+extern s_word ww;
+extern byte nn;
+
+extern struct status PSW;
 
 struct Data take(word w, int a) {
     struct Data res;
@@ -97,8 +106,26 @@ struct Data take(word w, int a) {
                 res.w = b_read(res.mem_adr);
             }
             return res;
+        case 6:
+            if (i == 7) {
+                res.mem_adr = (word) (pc + w_read(pc) + 2);
+                if (B == 0)
+                    res.w = w_read(res.mem_adr);
+                if (B)
+                    res.w = b_read(res.mem_adr);
+            }
+            else {
+                res.mem_adr = reg[i] + w_read(pc);
+                if (B == 0)
+                    res.w = w_read(res.mem_adr);
+                if (B == 1)
+                    res.w = b_read(res.mem_adr);
+            }
+            if (t)
+                printf("%d(R%o) ", w_read(pc), i);
+            return res;
         default:        //mode 6, 7 ???
-            printf("Ha, loh (take_src) \n");
+            printf("Ha, loh (take) \n");
             break;
     }
 }
