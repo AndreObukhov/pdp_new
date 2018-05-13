@@ -90,22 +90,19 @@ void flag_check() {
     printf("---FLAG TEST END---\n");
 }
 
-/*void set_flags (int res) {
-    if (res == 0)
+void set_zero (int a) {
+    if (a == 0)
         PSW.Z = 1;
     else
         PSW.Z = 0;
+}
 
-    if (res < 0)
+void set_negative (int a) {
+    if (a < 0)
         PSW.N = 1;
     else
         PSW.N = 0;
-
-    if (((res>>16) & 1) == 1)
-        PSW.C = 1;  //carry появляется с минусом
-    else
-        PSW.C = 0;
-}*/
+}
 
 void do_halt(word w) {
     if (t)
@@ -134,15 +131,8 @@ void do_add(word w) {
     dest.w = (word) res;
     w_write(dest.mem_adr, dest.w);
 
-    if (res == 0)
-        PSW.Z = 1;
-    else
-        PSW.Z = 0;
-
-    if (res < 0)
-        PSW.N = 1;      //как сделать carry???
-    else
-        PSW.N = 0;
+    set_zero(res);
+    set_negative(res);      //как сделать carry???
     //flag_check;
     if (t)
         smart_reg_check(src_reg(w), dst_reg(w));
@@ -180,16 +170,8 @@ void do_mov(word w) {
         }
     }
 
-    if (ww.s_w == 0)
-        PSW.Z = 1;
-    else
-        PSW.Z = 0;
-
-    if (ww.s_w < 0)
-        PSW.N = 1;
-    else
-        PSW.N = 0;
-
+    set_zero(ww.s_w);
+    set_negative (ww.s_w);
     PSW.V = 0;
     //flag_check();
 }
@@ -204,7 +186,7 @@ void do_sob(word w) {
     reg[reg_adr] --;
 
     if (reg[reg_adr] > 0) {
-        pc = pc - 2*nn;
+        pc = (word) (pc - 2*nn);
     }
     if (t)
         printf("R%o, %06o\n", reg_adr, pc);
@@ -263,14 +245,8 @@ void do_tstb(word w) {
 
         bb.u_b = (byte)dest.w;
 
-        if (bb.s_b == 0)
-            PSW.Z = 1;
-        else
-            PSW.Z = 0;
-        if (bb.s_b < 0)
-            PSW.N = 1;
-        else
-            PSW.N = 0;
+        set_zero(bb.s_b);
+        set_negative(bb.s_b);
         PSW.C = 0;
         PSW.V = 0;
     }
@@ -282,14 +258,8 @@ void do_tstb(word w) {
 
         ww.u_w = dest.w;
 
-        if (ww.s_w == 0)
-            PSW.Z = 1;
-        else
-            PSW.Z = 0;
-        if (ww.s_w < 0)
-            PSW.N = 1;
-        else
-            PSW.N = 0;
+        set_zero(ww.s_w);
+        set_negative(ww.s_w);
         PSW.C = 0;
         PSW.V = 0;
     }
