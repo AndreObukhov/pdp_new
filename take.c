@@ -124,7 +124,7 @@ struct Data take(word w, int a) {
             if (t)
                 printf("%d(R%o) ", w_read(pc), i);
             return res;
-        default:        //mode 7 ???
+        default:        //mode 7
             printf("Ha, loh (take) \n");
             break;
     }

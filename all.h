@@ -84,6 +84,7 @@ void do_tstb(word w);
 void do_bpl(word w);
 void do_jsr(word w);
 void do_rts(word w);
+void do_ror(word w);
 void do_unknown(word w);
 void run (adr pc0);
 void load_file(FILE* f);

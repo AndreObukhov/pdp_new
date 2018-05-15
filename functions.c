@@ -7,6 +7,7 @@
 extern byte mem[64*1024];
 extern word reg[8];
 extern int t;
+extern int full;
 
 extern s_byte bb;
 extern s_word ww;
@@ -31,8 +32,16 @@ byte b_read (adr a) {
 }
 
 void b_write (adr a, byte val) {
-    if (a < 8)
-        reg[a] = val;
+    if (a < 8) {
+        if (PSW.N) {
+            reg[a] = 0xFF;
+            reg[a] = ((reg[a] << 8) | val);
+            //printf("\nIF\n");
+            //reg[a] = reg[a] | val;
+        }
+        else
+            reg[a] = val;
+    }
     else
         mem[a] = val;
     if (a == out + 2) {
@@ -87,7 +96,7 @@ void smart_reg_check(int a, int b) {
 void flag_check() {
     printf("---FLAG TEST BEGIN---\n");
     printf("N=%06o,    Z=%06o     V=%06o    C=%06o\n", PSW.N, PSW.Z, PSW.V, PSW.C );
-    printf("---FLAG TEST END---\n");
+    printf("----FLAG TEST END----\n");
 }
 
 void set_zero (int a) {
@@ -117,22 +126,31 @@ void do_add(word w) {
         printf("ADD   ");
 
     int res;
+    int res1;
 
     struct Data source = take(w, src);
     struct Data dest = take(w, dst);
     //printf("%o %o\n",source, dest);
 
     ww.u_w = dest.w;
-    res = ww.s_w;
+    res1 = ww.s_w;
 
     ww.u_w = source.w;
-    res = res + ww.s_w;
+    res = ww.s_w;
+
+    res = res + res1;
 
     dest.w = (word) res;
     w_write(dest.mem_adr, dest.w);
 
     set_zero(res);
     set_negative(res);      //как сделать carry???
+    if (ww.s_w < 0 && res1 < 0 && res > 0)
+        PSW.V = 1;
+    else if (ww.s_w > 0 && res1 > 0 && res < 0)
+        PSW.V = 1;
+    else
+        PSW.V = 0;
     //flag_check;
     if (t)
         smart_reg_check(src_reg(w), dst_reg(w));
@@ -281,7 +299,7 @@ void do_bpl(word w) {
     }
     /*else if (N == 1 && com.B == 1) {
         if(t) {
-            fprintf(f, "BPL ");
+            printf("BPL ");
         }
         return 0;
     }*/
@@ -312,8 +330,48 @@ void do_rts(word w) {
     //printf("R6 = %06o\n", w_read(reg[6]));
     //printf("%06o\n", pc);
     reg[dst_reg(w)] = w_read(reg[6]);
-    reg[dst_reg(w)] += 2;   //костылб
+    reg[dst_reg(w)] += 2;
     //printf("%06o\n", pc);
+}
+
+void do_ror(word w) {
+    word flag;
+    byte c = PSW.C;
+    struct Data dest = take(w, dst);
+
+    if (B(w) == 0) {
+        if (t)
+            printf("ROR\n");
+        PSW.C = (byte) (dest.w & 1);
+
+        //assert(PSW.C & 1 == PSW.C);
+        c = (c << 15);
+
+        dest.w = ((dest.w) >> 1) | c;
+        ww.u_w = dest.w;
+        w_write(dest.mem_adr, dest.w);
+
+        set_negative(ww.s_w);
+        set_zero(ww.s_w);
+    }
+    if (B(w)) {
+        if (t)
+            printf("RORb\n");
+        PSW.C = (byte) (dest.w & 1);
+
+        assert(PSW.C & 1 == PSW.C);
+        c = (c << 7);
+
+        dest.w = (((byte)dest.w) >> 1) | c;
+        bb.u_b = (byte)dest.w;
+
+        //printf("\nDEST.W = %03o\n", (byte)dest.w);
+
+        b_write(dest.mem_adr, (byte)dest.w);
+
+        set_zero(bb.s_b);
+        set_negative(bb.s_b);
+    }
 }
 
 void do_unknown(word w) {
@@ -339,6 +397,7 @@ struct Command {
         {0100000, 0177400, "bpl",       do_bpl,      HAS_XX},
         {0004000, 0177000, "jsr",       do_jsr,      HAS_DD},
         {0000200, 0177770, "rts",       do_rts,      NO_PARAM},
+        {0006000, 0077700, "ror",       do_ror,      HAS_DD},
         {0,       0,       "unknown",   do_unknown,  HAS_NN}   //MUST BE THE LAST; последняя команда: функция пробегает весь массив
         // если нет совпадений - выполняется она
 };
@@ -346,13 +405,15 @@ struct Command {
 void run (adr pc0) {
     pc = pc0;   //используем 7 регистр для адресов
     int i;
+    int length = sizeof(commands)/ sizeof(commands[0]);
+    //printf("%d\n", length);
     while (1) {
         word w = w_read(pc);
         if (t) {
             printf("%06o:%06o   ", pc, w);
         }
         pc += 2;
-        for (i = 0; i < 64*1024; i ++) {
+        for (i = 0; i <= length; i ++) {
             struct Command cmd = commands[i];
             if ((w & cmd.mask) == cmd.opcode) { //проходим весь массив команд
                 //printf("%s\n", cmd.name);
@@ -366,7 +427,8 @@ void run (adr pc0) {
                 if (t)
                     printf("COMMAND: ");    //необязательно
                 cmd.func(w);
-                //reg_check();
+                if (full)
+                    reg_check();
                 //printf("\n");   //просто для удобства делает пустую строчку между комндами
                 break;  //выходим из сравнения с массивом; если нет совпадений - есть последняя команда unknown
             }

@@ -4,6 +4,7 @@ byte mem[64*1024];  //вся память
 word reg[8];    //регистры
 
 int t; //переменная, отвечающая за трассировку
+int full;
 
 s_byte bb;
 s_word ww;
@@ -14,10 +15,15 @@ byte nn;
 
 int main(int argc, char **argv) {
 
+    if (strcmp(argv[1], "-T") == 0) {
+        t = 1;
+        full = 1;
+    }
     if (strcmp(argv[1], "-t") == 0) //режим трассировки включен
         t = 1;
     if (strcmp(argv[1], "-q") == 0) //режим трассировки выключен
         t = 0;
+
 
 //    //printf("---start testmem---\n");
 //    testmem();
